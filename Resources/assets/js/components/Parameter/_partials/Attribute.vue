@@ -5,6 +5,7 @@
                 <i class="fa fa-trash"></i>
             </button>
         </td>
+
         <td>
             <ul class="list-unstyled m-a-0">
                 <li v-for="language in languages">
@@ -13,8 +14,9 @@
                 </li>
             </ul>
         </td>
+
         <td v-show="hasIcon" class="icon-td">
-            <img :src="attribute.image_url || '//placehold.it/75'" alt="Preview">
+            <img :src="attribute.image_url || 'https://placehold.it/150'" alt="Preview" class="img-thumbnail">
             <label class="custom-file px-file">
                 <input type="file" class="custom-file-input" @change="handleFileChange($event)">
                 <span class="custom-file-control form-control">Choose file...</span>
@@ -28,60 +30,60 @@
 </template>
 
 <script>
-    export default {
-        props: {
-            attribute: {
-                type: Object,
-                required: true
-            },
+	import { mapState } from 'vuex';
+	import XEditable from '../../XEditable';
 
-            hasIcon: {
-                type: Boolean,
-                default: false
-            },
+	export default {
+		props: {
+			attribute: {
+				type: Object,
+				required: true
+			},
 
-            languages: {
-                type: Array,
-                required: true
-            }
-        },
+			hasIcon: {
+				type: Boolean,
+				default: false
+			}
+		},
 
-        mounted() {
-            let fileInput = $(this.$el).find('.px-file');
+        computed: mapState(['languages']),
 
-            setTimeout(() => {
-                fileInput.pxFile();
-            }, 500);
-        },
+		mounted () {
+			let fileInput = $(this.$el).find('.px-file');
 
-        methods: {
-            handleFileChange(event) {
-                let input = event.target;
+			setTimeout(() => {
+				fileInput.pxFile();
+			}, 500);
+		},
 
-                if (input.files && input.files[0]) {
-                    var reader = new FileReader();
+		methods: {
+			handleFileChange (event) {
+				let input = event.target;
 
-                    reader.onload = e => {
-                        $(this.$el).find('.icon-td img').attr('src', e.target.result);
-                    };
+				if (input.files && input.files[0]) {
+					var reader = new FileReader();
 
-                    reader.readAsDataURL(input.files[0]);
+					reader.onload = e => {
+						$(this.$el).find('.icon-td img').attr('src', e.target.result);
+					};
 
-                    this.attribute.image = input.files[0];
-                }
-            }
-        },
+					reader.readAsDataURL(input.files[0]);
 
-        components: {
-            'x-editable': require('../XEditable.vue'),
-        }
-    }
+					this.attribute.image = input.files[0];
+				}
+			}
+		},
+
+		components: {
+			XEditable
+		}
+	};
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     .icon-td {
         img {
-            max-width: 120px;
+            width: 100px;
             vertical-align: top;
             margin-right: 15px;
         }

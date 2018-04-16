@@ -52,6 +52,7 @@ class Format extends PassThrough
         // Map attributes.
         foreach ($this->parameter->attributes as $attribute) {
             $attributeData = [
+                'id'           => $attribute->id,
                 'key'          => str_random(15),
                 'translations' => [],
                 'image_url'    => $attribute->image->url(),

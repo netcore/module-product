@@ -7,6 +7,12 @@ Route::group([
     'namespace'  => 'Modules\Product\Http\Controllers',
 ], function () {
 
+    Route::view('/', 'product::index');
+
+
+    // @TODO - refactor.
+
+
     Route::resource('products', 'ProductController');
 
     Route::delete('products/{product}/images/{image}', [
@@ -33,15 +39,6 @@ Route::group([
         'as'   => 'fields.paginate',
     ]);
 
-    Route::resource('parameters', 'ParameterController', [
-        'except' => ['show'],
-    ]);
-
-    Route::get('parameters/paginate', [
-        'uses' => 'ParameterController@paginate',
-        'as'   => 'parameters.paginate',
-    ]);
-
     /**
      * Settings.
      */
@@ -49,6 +46,18 @@ Route::group([
         'uses' => 'ProductSettingController@update',
         'as'   => 'settings.update',
     ]);
+
+    // API routes.
+    Route::group(['prefix' => 'api'], function () {
+        Route::get('languages', 'BaseController@languages');
+
+        // Parameters.
+        Route::get('parameters', 'ParameterController@paginate');
+        Route::post('parameters', 'ParameterController@store');
+        Route::get('parameters/{parameter}', 'ParameterController@show');
+        Route::put('parameters/{parameter}', 'ParameterController@update');
+        Route::delete('parameters/{parameter}', 'ParameterController@destroy');
+    });
 
     /**
      * API.

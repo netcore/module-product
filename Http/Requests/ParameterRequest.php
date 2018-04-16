@@ -23,8 +23,6 @@ class ParameterRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isEdit = !!$this->route('parameter');
-
         $rules = [
             'type' => 'required|in:radio,checkbox,range',
         ];
@@ -40,12 +38,8 @@ class ParameterRequest extends FormRequest
             ];
         } else {
             foreach ($this->input('attributes', []) as $index => $attribute) {
-                if ($this->input('iconable_attributes') && !$isEdit) {
-                    $rules["attributes.{$index}.image"] = 'required|image';
-                }
-
                 foreach (languages() as $language) {
-                    $rules["attributes.{$index}.translations.{$language->iso_code}"] = 'required';
+                    $rules["attributes.{$index}.translations.{$language->iso_code}.name"] = 'required';
                 }
             }
         }
@@ -53,14 +47,43 @@ class ParameterRequest extends FormRequest
         return $rules;
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array
+     */
     public function messages(): array
     {
         $messages = [];
 
         foreach (languages() as $language) {
-            $messages["translations.{$language->iso_code}.name.required"] = "Please enter parameter name for {$language->title} language!";
+            $messages["translations.{$language->iso_code}.name.required"] = "Please provide parameter name for {$language->title} language.";
         }
 
-        dd($messages);
+        foreach ($this->input('attributes', []) as $index => $attribute) {
+            foreach (languages() as $language) {
+                $message = "Please provide translation for {$language->title} language of {$this->ordinal($index + 1)} parameter.";
+                $messages["attributes.{$index}.translations.{$language->iso_code}.name.required"] = $message;
+            }
+        }
+
+        return $messages;
+    }
+
+    /**
+     * Ordinal suffix.
+     *
+     * @param $number
+     * @return string
+     */
+    private function ordinal($number): string
+    {
+        $ends = array('th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th');
+
+        if ((($number % 100) >= 11) && (($number % 100) <= 13)) {
+            return $number . 'th';
+        }
+
+        return $number . $ends[$number % 10];
     }
 }

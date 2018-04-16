@@ -2,10 +2,10 @@
 
 namespace Modules\Product\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\View\View;
+use Illuminate\Support\Collection;
 use Modules\Product\Http\Requests\ParameterRequest;
 use Modules\Product\Models\Parameter;
 use Modules\Product\Traits\Controllers\ParametersPagination;
@@ -15,23 +15,14 @@ class ParameterController extends Controller
     use ParametersPagination;
 
     /**
-     * Display listing of parameters.
+     * Fetch parameter data.
      *
-     * @return \Illuminate\View\View
+     * @param \Modules\Product\Models\Parameter $parameter
+     * @return \Illuminate\Support\Collection
      */
-    public function index(): View
+    public function show(Parameter $parameter): Collection
     {
-        return view('product::parameters.index');
-    }
-
-    /**
-     * Display parameter create form.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function create(): View
-    {
-        return view('product::parameters.form');
+        return $parameter->format()->forAdminSideVue();
     }
 
     /**
@@ -61,20 +52,14 @@ class ParameterController extends Controller
         }
 
         return response()->json([
-            'redirect' => route('product::parameters.edit', $parameter),
+            'redirect' => [
+                'name'   => 'parameters.edit',
+                'params' => [
+                    'id' => $parameter->id,
+                ],
+            ],
             'success'  => 'Parameter successfully created!',
         ]);
-    }
-
-    /**
-     * Display parameter edit form.
-     *
-     * @param \Modules\Product\Models\Parameter $parameter
-     * @return \Illuminate\View\View
-     */
-    public function edit(Parameter $parameter): View
-    {
-        return view('product::parameters.form', compact('parameter'));
     }
 
     /**
@@ -86,7 +71,60 @@ class ParameterController extends Controller
      */
     public function update(ParameterRequest $request, Parameter $parameter): JsonResponse
     {
-        dd($request->all());
+        $parameter->update(
+            $request->except('translations', 'attributes')
+        );
+
+        $parameter->syncTranslations(
+            $request->input('translations', [])
+        );
+
+        $existingAttributeIds = $parameter->attributes->pluck('id')->toArray();
+        $currentAttributeIds = [];
+
+        foreach (array_get($request->all(), 'attributes', []) as $row) {
+            if (isset($row['id'])) {
+                $attribute = $parameter->attributes()->findOrFail($row['id']);
+                $attribute->update(
+                    array_only($row, 'image')
+                );
+            } else {
+                $attribute = $parameter->attributes()->create(
+                    array_only($row, 'image')
+                );
+            }
+
+            $currentAttributeIds[] = $attribute->id;
+
+            $attribute->syncTranslations(
+                array_get($row, 'translations', [])
+            );
+        }
+
+        $attributesToDelete = array_diff($existingAttributeIds, $currentAttributeIds);
+        $parameter->attributes()->whereIn('id', $attributesToDelete)->delete();
+
+        return response()->json([
+            'success' => 'Parameter successfully updated!',
+        ]);
     }
 
+    /**
+     * Delete parameter from database.
+     *
+     * @param \Modules\Product\Models\Parameter $parameter
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy(Parameter $parameter): JsonResponse
+    {
+        try {
+            $parameter->delete();
+        } catch (Exception $e) {
+            return response($e->getMessage(), 500);
+        }
+
+        return response()->json([
+            'message' => 'Parameter successfully deleted!',
+        ]);
+    }
 }

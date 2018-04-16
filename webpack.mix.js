@@ -8,16 +8,13 @@ const config = {
     out: __dirname + '/Assets/'
 };
 
+// Global instance for all product related stuff.
+mix.js(path.join(config.res, 'js/app.js'), path.join(config.out, 'js/app.js'));
+
 // Configure mix.
-mix.js(path.join(config.res, 'js/fields/index.js'), path.join(config.out, 'js/fields/index.js'));
-mix.js(path.join(config.res, 'js/fields/form.js'), path.join(config.out, 'js/fields/form.js'));
-
-mix.js(path.join(config.res, 'js/products/index.js'), path.join(config.out, 'js/products/index.js'));
-mix.js(path.join(config.res, 'js/products/form.js'), path.join(config.out, 'js/products/form.js'));
-
-mix.js(path.join(config.res, 'js/parameters/index.js'), path.join(config.out, 'js/parameters/index.js'));
-mix.js(path.join(config.res, 'js/parameters/form.js'), path.join(config.out, 'js/parameters/form.js'));
-
+//mix.js(path.join(config.res, 'js/fields/index.js'), path.join(config.out, 'js/fields/index.js'));
+//mix.js(path.join(config.res, 'js/products/index.js'), path.join(config.out, 'js/products/index.js'));
+//mix.js(path.join(config.res, 'js/parameters/index.js'), path.join(config.out, 'js/parameters/index.js'));
 
 mix.webpackConfig({
     externals: {
