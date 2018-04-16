@@ -1,0 +1,35 @@
+{
+    "name": "netcore/module-product",
+    "description": "Netcore CMS module for easy products management.",
+    "homepage": "http://netcore.lv",
+    "type": "module",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Viktors Ņikiforovs",
+            "email": "viktors.nikiforovs@netcore.lv"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Product\\Providers\\ProductServiceProvider"
+            ],
+            "aliases": {
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Product\\": ""
+        }
+    },
+    "require": {
+        "php": ">=7.1",
+        "cviebrock/eloquent-sluggable": "^4.3",
+        "netcore/module-category": "^1.0",
+        "netcore/module-country": "^1.0",
+        "yajra/laravel-datatables-oracle": "^8.3"
+    },
+    "minimum-stability": "dev"
+}

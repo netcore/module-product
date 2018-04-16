@@ -1,0 +1,16 @@
+{
+    "name": "Product",
+    "alias": "product",
+    "description": "Products management module.",
+    "keywords": [],
+    "active": 1,
+    "order": 1,
+    "providers": [
+        "Modules\\Product\\Providers\\ProductServiceProvider"
+    ],
+    "aliases": {},
+    "files": [
+        "start.php"
+    ],
+    "requires": []
+}
