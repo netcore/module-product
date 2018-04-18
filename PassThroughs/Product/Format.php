@@ -5,9 +5,6 @@ namespace Modules\Product\PassThroughs\Product;
 use Illuminate\Support\Collection;
 use Modules\Product\Models\Field;
 use Modules\Product\Models\Product;
-use Modules\Product\Models\ProductField;
-use Modules\Product\Models\ProductFieldTranslation;
-use Modules\Product\Models\ProductImage;
 use Modules\Product\Models\ProductPrice;
 use Modules\Product\PassThroughs\PassThrough;
 use Modules\Product\Repositories\FieldsRepository;
@@ -47,18 +44,16 @@ class Format extends PassThrough
             'fieldsData'   => [],
             'prices'       => $this->formatPrices($this->product),
             'translations' => $this->formatTranslations($this->product),
+
+            'uploadableImages' => [],
         ];
 
+        $fieldsOfCategories = app(FieldsRepository::class)->getFieldsOfCategories($this->product->categories);
+
         // Product fields.
-        $fieldsData = collect();
-
-        app(FieldsRepository::class)
-            ->getFieldsOfCategories($this->product->categories)
-            ->each(function (Field $field) use ($fieldsData) {
-                $this->formatProductField($field, $fieldsData);
-            });
-
-        $data['fieldsData'] = $fieldsData;
+        $data['fieldsData'] = $fieldsOfCategories->map(function (Field $field) {
+            return $this->formatProductField($field);
+        });
 
         // Product variants.
         if ($this->product->is_variable) {
@@ -82,35 +77,42 @@ class Format extends PassThrough
      * Format product field, fill with existing value.
      *
      * @param \Modules\Product\Models\Field $field
-     * @param \Illuminate\Support\Collection $fieldsData
+     * @return array
      */
-    private function formatProductField(Field $field, Collection &$fieldsData)
+    private function formatProductField(Field $field): array
     {
         $productField = $this->product->productFields->where('field_id', $field->id)->first();
+
+        $fieldData = [
+            'id' => $field->id,
+        ];
 
         if ($field->is_translatable) {
             $translations = [];
 
             foreach (languages() as $language) {
                 $translationObject = $productField->translations->where('locale', $language->iso_code)->first();
-
-                $translations[$language->iso_code] = [
-                    'value' => $translationObject->value ?? '',
-                ];
+                $translations[$language->iso_code] = $translationObject->value ?? '';
             }
 
-            $value = ['translations' => $translations];
+            $fieldData['values'] = $translations;
         } else {
             if ($field->type == 'checkbox') {
-                $value = ['value' => (bool)$productField->value ?? ''];
+                $fieldData['value'] = (bool)$productField->value ?? 0;
             } else {
-                $value = ['value' => $productField->value ?? ''];
+                $fieldData['value'] = $productField->value;
             }
         }
 
-        $fieldsData->put($field->id, $value);
+        return $fieldData;
     }
 
+    /**
+     * Format product prices.
+     *
+     * @param \Modules\Product\Models\Product $product
+     * @return \Illuminate\Support\Collection
+     */
     private function formatPrices(Product $product): Collection
     {
         return $product->prices->mapWithKeys(function (ProductPrice $price) {
@@ -129,11 +131,17 @@ class Format extends PassThrough
         });
     }
 
+    /**
+     * Format translations.
+     *
+     * @param \Modules\Product\Models\Product $product
+     * @return array
+     */
     private function formatTranslations(Product $product)
     {
         static $languages;
 
-        if (! $languages) {
+        if (!$languages) {
             $languages = languages();
         }
 

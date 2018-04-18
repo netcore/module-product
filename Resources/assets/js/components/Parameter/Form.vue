@@ -153,10 +153,20 @@
 			...mapState(['languages']),
 
 			breadcrumb () {
-				return {
-					'parameters.index': 'Parameters',
-					'parameters.create': 'Create parameter'
+				let breadcrumb = {
+					'parameters.index': 'Parameters'
 				};
+
+				if (this.$route.params.id) {
+					breadcrumb['parameters.edit'] = {
+						title: 'Edit parameter',
+						params: {id: this.$route.params.id}
+					};
+				} else {
+					breadcrumb['parameters.create'] = 'Create parameter';
+				}
+
+				return breadcrumb;
 			},
 
 			isTypeRange () {

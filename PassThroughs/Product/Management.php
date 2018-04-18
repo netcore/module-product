@@ -5,7 +5,6 @@ namespace Modules\Product\PassThroughs\Product;
 use Modules\Product\Models\Product;
 use Modules\Product\PassThroughs\PassThrough;
 use Modules\Product\Repositories\FieldsRepository;
-use Modules\Product\Repositories\ProductsRepository;
 
 class Management extends PassThrough
 {
@@ -37,26 +36,32 @@ class Management extends PassThrough
     /**
      * Sync product fields.
      *
-     * @param array $data
+     * @param array $fieldsData
      * @return void
      */
-    public function syncFields(array $data)
+    public function syncFields(array $fieldsData): void
     {
         $fields = $this->fieldsRepository->getFieldsOfCategories(
             $this->product->categories
         );
 
+        $fieldsFromFrontend = collect($fieldsData);
+
         foreach ($fields as $field) {
+            $fieldFromFrontend = $fieldsFromFrontend->where('id', $field->id)->first();
+
+            if (!$fieldFromFrontend) {
+                continue;
+            }
+
             $productField = $this->product->productFields()->firstOrCreate([
                 'field_id' => $field->id,
             ]);
 
-            $fieldFromFrontend = array_get($data, $field->id);
-
-            if (is_array($fieldFromFrontend) && $field->is_translatable) {
+            if ($field->is_translatable) {
                 $translations = [];
 
-                foreach ($fieldFromFrontend as $iso => $value) {
+                foreach ($fieldFromFrontend['values'] as $iso => $value) {
                     $translations[$iso] = ['value' => $value];
                 }
 
@@ -91,13 +96,13 @@ class Management extends PassThrough
      * @param array $prices
      * @return void
      */
-    public function syncPrices(array $prices)
+    public function syncPrices(array $prices): void
     {
-        $currencies = (new ProductsRepository)->getCurrencies();
+        $currencies = product()->getCurrencies();
 
         foreach ($prices as $currencyId => $price) {
             if (!$currency = $currencies->where('id', $currencyId)->first()) {
-                abort(404);
+                continue;
             }
 
             /**

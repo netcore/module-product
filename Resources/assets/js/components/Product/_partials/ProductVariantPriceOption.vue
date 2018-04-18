@@ -7,20 +7,18 @@
 
             <span class="input-group-addon">Without VAT:</span>
             <input type="number" step="0.01" min="0.01" class="form-control without-vat"
-                   :name="getInputName(currency, 'without_vat_without_discount')"
                    @change="recalculatePricesAndDiscounts($event, true)"
                    @keyup="recalculatePricesAndDiscounts($event, true)"
                    v-model.number="price.without_vat_without_discount">
 
             <span class="input-group-addon">With VAT:</span>
             <input type="number" step="0.01" min="0.01" class="form-control with-vat"
-                   :name="getInputName(currency, 'with_vat_without_discount')"
                    @change="recalculatePricesAndDiscounts($event, true)"
                    @keyup="recalculatePricesAndDiscounts($event, true)"
                    v-model.number="price.with_vat_without_discount">
 
             <span class="input-group-addon">
-                <input type="checkbox" :name="getInputName(currency, 'has_discount')" v-model="price.has_discount">
+                <input type="checkbox" v-model="price.has_discount">
                 Has discount
             </span>
         </div>
@@ -31,12 +29,12 @@
             </span>
 
             <span class="input-group-addon">
-                <input type="radio" :name="getInputName(currency, 'discount_type')" value="percent" v-model="price.discount_type">
+                <input type="radio" value="percent" v-model="price.discount_type">
                 Percent
             </span>
 
             <span class="input-group-addon">
-                <input type="radio" :name="getInputName(currency, 'discount_type')" value="money" v-model="price.discount_type">
+                <input type="radio" value="money" v-model="price.discount_type">
                 Money
             </span>
 
@@ -44,27 +42,26 @@
                 Discount amount:
             </span>
 
-            <input type="number" step="0.01" min="0.01" class="form-control" :name="getInputName(currency, 'discount_amount')"
-                   v-model.number="price.discount_amount">
+            <input type="number" step="0.01" min="0.01" class="form-control" v-model.number="price.discount_amount">
         </div>
 
         <ul class="prices-list">
             <li>
-                Without discount / With VAT: {{ price.with_vat_without_discount.toFixed(2) }} {{ currency.symbol }}
+                Without discount / With VAT: {{ parseFloat(price.with_vat_without_discount).toFixed(2) }} {{ currency.symbol }}
             </li>
 
             <li>
-                Without discount / Without VAT: {{ price.without_vat_without_discount.toFixed(2) }} {{ currency.symbol }}
+                Without discount / Without VAT: {{ parseFloat(price.without_vat_without_discount).toFixed(2) }} {{ currency.symbol }}
             </li>
         </ul>
 
         <ul class="prices-list" v-if="price.has_discount">
             <li>
-                With discount / With VAT: {{ price.with_vat_with_discount.toFixed(2) }} {{ currency.symbol }}
+                With discount / With VAT: {{ parseFloat(price.with_vat_with_discount).toFixed(2) }} {{ currency.symbol }}
             </li>
 
             <li>
-                With discount / Without VAT: {{ price.without_vat_with_discount.toFixed(2) }} {{ currency.symbol }}
+                With discount / Without VAT: {{ parseFloat(price.without_vat_with_discount).toFixed(2) }} {{ currency.symbol }}
             </li>
         </ul>
     </div>
@@ -78,10 +75,6 @@
                 required: true
             },
 
-            variantKey: {
-                type: String
-            },
-
             price: {
                 type: Object,
                 required: true
@@ -89,14 +82,6 @@
         },
 
         methods: {
-            getInputName(currency, which) {
-                if (this.variantKey) {
-                    return `variants[${this.variantKey}][prices][${currency.id}][${which}]`;
-                }
-
-                return `prices[${currency.id}][${which}]`;
-            },
-
             recalculatePricesAndDiscounts(event, isPriceChange) {
                 if(isPriceChange) {
                     let element = $(event.target);

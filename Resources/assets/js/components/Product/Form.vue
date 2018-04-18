@@ -1,12 +1,7 @@
 <template>
-    <form class="panel panel-default" id="product-form" :class="{'form-loading': isLoading}"
-          @submit.prevent="saveProduct()">
-
-        <input type="hidden" name="is_variable" v-model="product.is_variable">
-
+    <div class="panel panel-default" :class="{'form-loading': isLoading}">
         <div class="panel-heading">
-            <span class="panel-title" v-if="productRoute">Edit product</span>
-            <span class="panel-title" v-else>Create product</span>
+            <span class="panel-title">{{ isEdit ? 'Edit' : 'Create'}} product</span>
         </div>
 
         <div class="panel-body">
@@ -20,7 +15,7 @@
 
             <div class="form-group">
                 <label class="control-label">Categories:</label>
-                <select2 :multiple="true" :data="categories" v-model="product.categories" :name="`categories[]`"/>
+                <select2 :multiple="true" :data="productCategories" v-model="product.categories"/>
             </div>
 
             <div class="panel panel-default">
@@ -39,24 +34,22 @@
                 <div class="panel-body">
                     <table class="table table-stripped">
                         <tbody v-for="language in languages" v-show="currentLanguage === language.iso_code">
-                            <product-field
-                                    :tr="true"
-                                    :field="field"
-                                    :key="field.id"
-                                    :language="language"
-                                    v-for="field in translatableFields"
-                                    v-model="product.fieldsData[field.id].translations[language.iso_code].value">
-                            </product-field>
+                        <product-field
+                                :tr="true"
+                                :field="field"
+                                :key="field.id"
+                                :language="language"
+                                v-for="field in translatableFields"
+                                v-model="field.model.values[language.iso_code]"/>
                         </tbody>
 
                         <tbody>
-                            <product-field
-                                    :tr="true"
-                                    :field="field"
-                                    :key="field.id"
-                                    v-for="field in nonTranslatableFields"
-                                    v-model="product.fieldsData[field.id].value">
-                            </product-field>
+                        <product-field
+                                :tr="true"
+                                :field="field"
+                                :key="field.id"
+                                v-for="field in nonTranslatableFields"
+                                v-model="field.model.value"/>
                         </tbody>
                     </table>
                 </div>
@@ -71,6 +64,7 @@
                         </button>
                     </div>
                 </div>
+
                 <div class="panel-body">
                     <ul class="nav nav-tabs">
                         <li v-for="variant in product.variants">
@@ -81,86 +75,33 @@
                     <div class="tab-content tab-content-bordered">
                         <div class="tab-pane fade" :id="`variant-${variant.key}`" :key="variant.key"
                              v-for="variant in product.variants">
-                            <product-variant
-                                    :product="variant"
-                                    :languages="languages"
-                                    :currencies="currencies"
-                                    :is-variable="product.is_variable"
-                                    :image-reorder-route="imageReorderRoute"
-                                    @remove="removeProductVariant(variant)">
-                            </product-variant>
+                            <product-variant :product="variant" @remove="removeProductVariant(variant)"/>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <product-variant
-                    :product="product"
-                    :languages="languages"
-                    :currencies="currencies"
-                    :image-reorder-route="imageReorderRoute"
-                    v-if="! product.is_variable">
-            </product-variant>
+            <product-variant :product="product" v-if="!product.is_variable"/>
         </div>
 
         <div class="panel-footer text-right">
-            <button class="btn btn-success">
-                <i class="fa fa-check"></i> {{ productRoute ? 'Update' : 'Create' }}
+            <button type="button" class="btn btn-success" @click="saveProduct">
+                <i class="fa fa-check"></i> {{ isEdit ? 'Update' : 'Create' }}
             </button>
         </div>
-    </form>
+    </div>
 </template>
 
 <script>
     import _ from 'lodash';
-    import axios from 'axios';
-    import Helpers from '../../global-helpers';
-    import EventBus from '../../event-bus';
+    import {mapState} from 'vuex';
+    import ProductField from './_partials/ProductField';
+    import ProductVariant from './_partials/ProductVariant';
 
     export default {
-        props: {
-            method: {
-                required: true,
-                type: String
-            },
-
-            route: {
-                required: true,
-                type: String
-            },
-
-            fieldsRoute: {
-                required: true,
-                type: String
-            },
-
-            productRoute: {
-                required: false,
-                type: String
-            },
-
-            imageReorderRoute: {
-                required: false,
-                type: String
-            },
-
-            languages: {
-                required: true,
-                type: Array
-            },
-
-            categories: {
-                required: true,
-                type: Array
-            },
-
-            currencies: {
-                required: true,
-                type: Array
-            }
-        },
-
         computed: {
+            ...mapState(['languages', 'productCategories', 'currencies']),
+
             translatableFields() {
                 return _.filter(this.productFields, field => {
                     return field.is_translatable;
@@ -171,36 +112,36 @@
                 return _.filter(this.productFields, field => {
                     return !field.is_translatable;
                 });
+            },
+
+            isEdit() {
+                return !!this.$route.params.id;
+            },
+
+            isLoading() {
+                return _.filter(this.loadingStates, state => state).length;
             }
         },
 
         data() {
             return {
-                productFields: [],
-                product: {
-                    is_variable: 0,
-                    categories: [],
-                    fieldsData: {},
-                    variants: [],
-                    images: [],
-                    prices: this.mockProductPrices(),
-                    translations: this.mockTranslationsObject({ title: 'New product' })
+                loadingStates: {
+                    product: false,
+                    fields: false,
+                    categories: false
                 },
-                currentLanguage: _.get(_.first(this.languages), 'iso_code', 'en'),
-                isLoading: false
+
+                initialCompleted: false,
+                productFields: [],
+                currentLanguage: null,
+                product: {
+                    categories: []
+                }
             };
         },
 
         created() {
-            if (this.productRoute) {
-                this.fetchProduct();
-            } else {
-                this.fetchFields();
-            }
-
-            EventBus.$on('product::loadingState', state => {
-                this.isLoading = state;
-            });
+            this.init();
         },
 
         mounted() {
@@ -208,37 +149,139 @@
         },
 
         methods: {
-            fetchFields() {
-                this.isLoading = true;
+            init() {
+                this.resetForm();
 
-                axios
-                    .get(this.fieldsRoute, {
-                        params: {
-                            categories: this.product.categories
-                        }
-                    })
-                    .then(({data}) => {
-                        this.productFields = data;
-                        this.mockProductFields();
-                    })
-                    .catch(Helpers.showServerError)
-                    .then(() => {
-                        this.isLoading = false;
-                    });
+                this.fetchProductCategories().then(() => {
+                    return this.isEdit ? this.fetchProduct() : this.fetchFields();
+                });
+
+                this.currentLanguage = _.first(this.languages).iso_code;
+            },
+
+            resetForm() {
+                this.product = {
+                    is_variable: 0,
+                    categories: [],
+                    fieldsData: [],
+                    variants: [],
+                    images: [],
+                    uploadableImages: [],
+                    prices: {},
+                    translations: this.$helpers.mockTranslations({title: 'New product', slug: ''})
+                };
+
+                this.setProductPrices(this.product);
+            },
+
+            fetchProductCategories() {
+                this.loadingStates.categories = true;
+
+                return this.$http.get('/admin/products/api/categories').then(({data: categories}) => {
+                    this.$store.commit('setProductCategories', categories);
+                    this.loadingStates.categories = false;
+                }).catch(this.$helpers.showServerError);
             },
 
             fetchProduct() {
-                this.isLoading = true;
+                this.loadingStates.product = true;
+                let id = this.$route.params.id;
 
-                axios
-                    .get(this.productRoute)
-                    .then(({data}) => {
-                        this.product = data.product;
-                    })
-                    .catch(Helpers.showServerError)
-                    .then(() => {
-                        this.isLoading = false;
-                    });
+                return this.$http.get(`/admin/products/api/products/${id}`).then(({data: product}) => {
+                    this.product = product;
+                }).then(this.fetchFields).then(() => {
+                    this.loadingStates.product = false;
+                    this.initialCompleted = true;
+                }).catch(this.$helpers.showServerError).then();
+            },
+
+            fetchFields() {
+                let payload = {
+                    params: {
+                        categories: this.product.categories
+                    }
+                };
+
+                this.loadingStates.fields = true;
+
+                return this.$http.get('/admin/products/api/products/fields', payload).then(({data: fields}) => {
+                    this.productFields = fields;
+                    this.mockProductFields();
+                    this.loadingStates.fields = false;
+                }).catch(this.$helpers.showServerError);
+            },
+
+            mockProductFields() {
+                _.each(this.productFields, field => {
+                    let productField = _.find(this.product.fieldsData, {id: field.id});
+
+                    if (productField) {
+                        // Bind reference.
+                        field.model = productField;
+                        return;
+                    }
+
+                    let fieldObject = {
+                        id: field.id
+                    };
+
+                    if (field.is_translatable) {
+                        fieldObject.values = {};
+
+                        _.each(this.languages, language => {
+                            fieldObject.values[language.iso_code] = '';
+                        });
+                    } else {
+                        fieldObject.value = '';
+                    }
+
+                    this.product.fieldsData.push(fieldObject);
+
+                    field.model = fieldObject;
+                });
+            },
+
+            addProductVariant() {
+                let product = {
+                    key: this.$helpers.randomString(10),
+                    parameters: [],
+                    prices: {},
+                    images: [],
+                    uploadableImages: [],
+                    translations: this.$helpers.mockTranslations({title: 'New variant', slug: ''})
+                };
+
+                this.setProductPrices(product);
+                this.product.variants.push(product);
+            },
+
+            getVariantTitle(variant) {
+                return _.get(variant, `translations.${this.currentLanguage}.title`, 'New variant');
+            },
+
+            removeProductVariant(variant) {
+                this.product.variants.splice(
+                    this.product.variants.indexOf(variant), 1
+                );
+            },
+
+            setProductPrices(product) {
+                let prices = {};
+
+                _.each(this.currencies, currency => {
+                    prices[currency.id] = {
+                        id: currency.id,
+                        has_discount: false,
+                        discount_type: 'none',
+                        discount_amount: 0,
+                        with_vat_with_discount: 0,
+                        with_vat_without_discount: 0,
+                        without_vat_with_discount: 0,
+                        without_vat_without_discount: 0
+                    };
+                });
+
+                product.prices = _.cloneDeep(prices);
             },
 
             equalizeNameColumns() {
@@ -252,137 +295,54 @@
                     Math.round(maxWidth) + 30
                 );
 
-                setTimeout(this.equalizeNameColumns, 300);
-            },
-
-            mockProductFields() {
-                _.each(this.productFields, field => {
-                    // Keep existing field.
-                    if (_.has(this.product.fieldsData, field.id)) {
-                        return;
-                    }
-
-                    let fieldObject = {};
-
-                    if (field.is_translatable) {
-                        fieldObject.translations = {};
-
-                        _.each(this.languages, language => {
-                            fieldObject.translations[language.iso_code] = {
-                                value: ''
-                            };
-                        });
-                    } else {
-                        fieldObject.value = '';
-                    }
-
-                    this.product.fieldsData[field.id] = fieldObject;
-                });
+                setTimeout(this.equalizeNameColumns, 500);
             },
 
             saveProduct() {
-                this.isLoading = true;
+                this.loadingStates.product = true;
 
-                let form = new FormData(
-                    this.$el
-                );
+                let route = this.isEdit ? `/admin/products/api/products/${this.$route.params.id}` : `/admin/products/api/products`;
+                let payload = this.$helpers.getFormDataFromObject(this.product);
 
-                form.append('_method', this.method);
+                this.$http.post(route, payload).then(({data}) => {
+                    if (data.success) {
+                        $.growl.success({
+                            message: data.success
+                        });
+                    }
 
-                axios
-                    .post(this.route, form)
-                    .then(({data}) => {
-                        if (data.success) {
-                            $.growl.success({
-                                message: data.success
-                            });
-                        }
+                    if (data.redirect) {
+                        this.$router.push(data.redirect);
+                    }
 
-                        if (data.redirect) {
-                            window.location.replace(data.redirect);
-                        }
-
-                        if (data.refresh) {
-                            this.fetchProduct();
-
-                            EventBus.$emit('product::saved');
-                        }
-                    })
-                    .catch(err => {
-                        console.log(err.response);
-                    })
-                    .then(() => {
-                        this.isLoading = false;
-                    });
+                    if (data.product) {
+                        this.product = product;
+                    }
+                }).catch(this.$helpers.showServerError).then(() => this.loadingStates.product = false);
             },
-
-            addProductVariant() {
-                this.product.variants.push({
-                    key: Helpers.randomString(10),
-                    parameters: [],
-                    images: [],
-                    prices: this.mockProductPrices(),
-                    translations: this.mockTranslationsObject({
-                        title: 'New variant'
-                    })
-                });
-            },
-
-            getVariantTitle(variant) {
-                return _.get(variant, `translations.${this.currentLanguage}.title`, 'New variant');
-            },
-
-            removeProductVariant(variant) {
-                this.product.variants.splice(
-                    this.product.variants.indexOf(variant), 1
-                );
-            },
-
-            mockTranslationsObject(fields) {
-                let translations = {};
-
-                _.each(this.languages, language => {
-                    translations[language.iso_code] = _.clone(fields);
-                });
-
-                return translations;
-            },
-
-            mockProductPrices(product) {
-                let prices = {};
-
-                _.each(this.currencies, currency => {
-                    prices[currency.id] = {
-                        id: currency.id,
-                        has_discount: false,
-                        discount_type: 'none',
-                        discount_amount: 0,
-
-                        with_vat_with_discount: 0,
-                        with_vat_without_discount: 0,
-
-                        without_vat_with_discount: 0,
-                        without_vat_without_discount: 0
-                    };
-                });
-
-                if (product) {
-                    product.prices = prices;
-                } else {
-                    return prices;
-                }
-            }
         },
 
         components: {
-            'product-variant': require('./ProductVariant.vue'),
-            'product-field': require('./Field.vue'),
-            'select2': window.Select2
+            select2: window.Select2,
+            ProductField,
+            ProductVariant
         },
 
         watch: {
-            'product.categories'() {
+            'product.categories'(newCategories, oldCategories) {
+                if (!this.initialCompleted) {
+                    return;
+                }
+
+                if (_.isEqual(newCategories, oldCategories)) {
+                    return;
+                }
+
                 this.fetchFields();
+            },
+
+            $route() {
+                this.init();
             }
         }
     };

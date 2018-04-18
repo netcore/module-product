@@ -2,6 +2,7 @@
 
 namespace Modules\Product\Repositories;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Fluent;
 use Modules\Country\Models\Country;
@@ -25,7 +26,7 @@ class ProductsRepository
 
         // Sync product fields.
         $product->management()->syncFields(
-            $data['fields'] ?? []
+            $data['fieldsData'] ?? []
         );
 
         // Prices.
@@ -39,9 +40,13 @@ class ProductsRepository
         );
 
         // Images.
-        foreach ($data['images'] ?? [] as $image) {
+        foreach ($data['uploadableImages'] ?? [] as $image) {
+            if(!isset($image['file']) || !$image['file'] instanceof UploadedFile) {
+                continue;
+            }
+
             $product->images()->create([
-                'image' => $image,
+                'image' => $image['file'],
             ]);
         }
 

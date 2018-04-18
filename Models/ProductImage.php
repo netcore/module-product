@@ -94,18 +94,6 @@ class ProductImage extends Model implements StaplerableInterface
                 'name'     => $this->image_file_name,
                 'modified' => $this->image_updated_at,
             ];
-
-            $image['routes'] = [
-                'destroy' => [
-                    'route'  => route('product::products.images.destroy', [$this->product, $this]),
-                    'method' => 'DELETE',
-                ],
-
-                'asPreview' => [
-                    'route'  => route('product::products.images.mark-as-preview', [$this->product, $this]),
-                    'method' => 'POST',
-                ],
-            ];
         }
 
         return $image;
