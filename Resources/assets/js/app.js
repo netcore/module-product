@@ -16,5 +16,30 @@ Vue.component('breadcrumb', Breadcrumb);
 new Vue({
 	el: '#product-app',
 	router,
-	store
+	store,
+
+	methods: {
+		setActiveMenuItem(newRoute) {
+			let parts = newRoute.name ? newRoute.name.split('.') : [];
+			let menu = $('#left-admin-menu');
+
+			$.each(menu.find('li.px-nav-item > a'), (i, item) => {
+				let $item = $(item);
+				let url = $item.attr('href');
+
+				$item.parent('li').removeClass('active');
+
+				if(url.match(`/#/${parts[0]}`)) {
+					$item.parent('li').addClass('active');
+					$item.closest('li.px-nav-dropdown').addClass('px-open');
+				}
+			});
+		}
+	},
+
+	watch: {
+		$route(newRoute) {
+			this.setActiveMenuItem(newRoute);
+		}
+	}
 });

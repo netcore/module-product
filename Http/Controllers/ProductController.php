@@ -2,13 +2,16 @@
 
 namespace Modules\Product\Http\Controllers;
 
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Modules\Product\Models\Product;
+use Modules\Product\Traits\Controllers\ProductsPagination;
 
 class ProductController extends Controller
 {
+    use ProductsPagination;
+
     /**
      * Fetch product data for frontend.
      *

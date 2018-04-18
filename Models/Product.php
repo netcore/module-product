@@ -15,8 +15,7 @@ use Modules\Product\Traits\Models\TranslationHelpers;
 
 class Product extends Model
 {
-    use Translatable,
-        TranslationHelpers;
+    use Translatable, TranslationHelpers;
 
     /**
      * The table associated with the model.
@@ -43,6 +42,15 @@ class Product extends Model
     public $translatedAttributes = [
         'slug',
         'title',
+    ];
+
+    /**
+     * The relations to eager load on every query.
+     *
+     * @var array
+     */
+    protected $with = [
+        'translations',
     ];
 
     /** -------------------- Relations -------------------- */

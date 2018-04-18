@@ -26,8 +26,9 @@
             <table class="table table-bordered" id="products-datatable" style="width: 100%">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Type</th>
+                        <th>#</th>
+                        <th>Image</th>
+                        <th>Title</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -54,26 +55,32 @@
 		},
 
 		mounted () {
-			//this.initDatatable();
+			this.initDatatable();
 		},
 
 		methods: {
 			initDatatable () {
-				this.datatable = $('#parameters-datatable').dataTable({
+				this.datatable = $('#products-datatable').dataTable({
 					processing: true,
 					serverSide: true,
-					ajax: '/admin/products/api/parameters',
+					ajax: '/admin/products/api/products',
 					responsive: true,
 					columns: [
 						{
-							data: 'name',
-							name: 'translations.name',
+							data: 'id',
+                            name: 'id',
 							orderable: true,
 							searchable: true
 						},
 						{
-							data: 'type',
-							name: 'type',
+							data: 'image',
+							orderable: false,
+							searchable: false,
+                            width: 150
+						},
+						{
+							data: 'title',
+							name: 'translations.title',
 							orderable: true,
 							searchable: true
 						},

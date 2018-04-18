@@ -20077,7 +20077,32 @@ Vue.component('breadcrumb', __WEBPACK_IMPORTED_MODULE_3__components_Breadcrumb__
 new Vue({
 	el: '#product-app',
 	router: __WEBPACK_IMPORTED_MODULE_1__router__["a" /* default */],
-	store: __WEBPACK_IMPORTED_MODULE_2__store__["a" /* default */]
+	store: __WEBPACK_IMPORTED_MODULE_2__store__["a" /* default */],
+
+	methods: {
+		setActiveMenuItem: function setActiveMenuItem(newRoute) {
+			var parts = newRoute.name ? newRoute.name.split('.') : [];
+			var menu = $('#left-admin-menu');
+
+			$.each(menu.find('li.px-nav-item > a'), function (i, item) {
+				var $item = $(item);
+				var url = $item.attr('href');
+
+				$item.parent('li').removeClass('active');
+
+				if (url.match('/#/' + parts[0])) {
+					$item.parent('li').addClass('active');
+					$item.closest('li.px-nav-dropdown').addClass('px-open');
+				}
+			});
+		}
+	},
+
+	watch: {
+		$route: function $route(newRoute) {
+			this.setActiveMenuItem(newRoute);
+		}
+	}
 });
 
 /***/ }),
@@ -24368,6 +24393,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 //
 //
 //
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
 	computed: {
@@ -24385,7 +24411,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 		};
 	},
 	mounted: function mounted() {
-		//this.initDatatable();
+		this.initDatatable();
 	},
 
 
@@ -24393,19 +24419,24 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 		initDatatable: function initDatatable() {
 			var _this = this;
 
-			this.datatable = $('#parameters-datatable').dataTable({
+			this.datatable = $('#products-datatable').dataTable({
 				processing: true,
 				serverSide: true,
-				ajax: '/admin/products/api/parameters',
+				ajax: '/admin/products/api/products',
 				responsive: true,
 				columns: [{
-					data: 'name',
-					name: 'translations.name',
+					data: 'id',
+					name: 'id',
 					orderable: true,
 					searchable: true
 				}, {
-					data: 'type',
-					name: 'type',
+					data: 'image',
+					orderable: false,
+					searchable: false,
+					width: 150
+				}, {
+					data: 'title',
+					name: 'translations.title',
 					orderable: true,
 					searchable: true
 				}, {
@@ -24545,9 +24576,11 @@ var staticRenderFns = [
         [
           _c("thead", [
             _c("tr", [
-              _c("th", [_vm._v("Name")]),
+              _c("th", [_vm._v("#")]),
               _vm._v(" "),
-              _c("th", [_vm._v("Type")]),
+              _c("th", [_vm._v("Image")]),
+              _vm._v(" "),
+              _c("th", [_vm._v("Title")]),
               _vm._v(" "),
               _c("th", [_vm._v("Actions")])
             ])
@@ -24799,6 +24832,31 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 
@@ -24806,254 +24864,270 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-    computed: _extends({}, Object(__WEBPACK_IMPORTED_MODULE_1_vuex__["b" /* mapState */])(['languages', 'productCategories', 'currencies']), {
-        translatableFields: function translatableFields() {
-            return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.filter(this.productFields, function (field) {
-                return field.is_translatable;
-            });
-        },
-        nonTranslatableFields: function nonTranslatableFields() {
-            return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.filter(this.productFields, function (field) {
-                return !field.is_translatable;
-            });
-        },
-        isEdit: function isEdit() {
-            return !!this.$route.params.id;
-        },
-        isLoading: function isLoading() {
-            return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.filter(this.loadingStates, function (state) {
-                return state;
-            }).length;
-        }
-    }),
+	computed: _extends({}, Object(__WEBPACK_IMPORTED_MODULE_1_vuex__["b" /* mapState */])(['languages', 'productCategories', 'currencies']), {
+		translatableFields: function translatableFields() {
+			return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.filter(this.productFields, function (field) {
+				return field.is_translatable;
+			});
+		},
+		nonTranslatableFields: function nonTranslatableFields() {
+			return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.filter(this.productFields, function (field) {
+				return !field.is_translatable;
+			});
+		},
+		isEdit: function isEdit() {
+			return !!this.$route.params.id;
+		},
+		isLoading: function isLoading() {
+			return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.filter(this.loadingStates, function (state) {
+				return state;
+			}).length;
+		},
+		breadcrumb: function breadcrumb() {
+			var breadcrumb = {
+				'products.index': 'Products'
+			};
 
-    data: function data() {
-        return {
-            loadingStates: {
-                product: false,
-                fields: false,
-                categories: false
-            },
+			if (this.isEdit) {
+				breadcrumb['products.edit'] = {
+					title: 'Edit product',
+					params: this.$route.params
+				};
+			} else {
+				breadcrumb['products.create'] = 'Create product';
+			}
 
-            initialCompleted: false,
-            productFields: [],
-            currentLanguage: null,
-            product: {
-                categories: []
-            }
-        };
-    },
-    created: function created() {
-        this.init();
-    },
-    mounted: function mounted() {
-        this.equalizeNameColumns();
-    },
+			return breadcrumb;
+		}
+	}),
+
+	data: function data() {
+		return {
+			loadingStates: {
+				product: false,
+				fields: false,
+				categories: false
+			},
+
+			initialCompleted: false,
+			productFields: [],
+			currentLanguage: null,
+			product: {
+				categories: []
+			}
+		};
+	},
+	created: function created() {
+		this.init();
+	},
+	mounted: function mounted() {
+		this.equalizeNameColumns();
+	},
 
 
-    methods: {
-        init: function init() {
-            var _this = this;
+	methods: {
+		init: function init() {
+			var _this = this;
 
-            this.resetForm();
+			this.resetForm();
 
-            this.fetchProductCategories().then(function () {
-                return _this.isEdit ? _this.fetchProduct() : _this.fetchFields();
-            });
+			this.fetchProductCategories().then(function () {
+				return _this.isEdit ? _this.fetchProduct() : _this.fetchFields();
+			});
 
-            this.currentLanguage = __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.first(this.languages).iso_code;
-        },
-        resetForm: function resetForm() {
-            this.product = {
-                is_variable: 0,
-                categories: [],
-                fieldsData: [],
-                variants: [],
-                images: [],
-                uploadableImages: [],
-                prices: {},
-                translations: this.$helpers.mockTranslations({ title: 'New product', slug: '' })
-            };
+			this.currentLanguage = __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.first(this.languages).iso_code;
+		},
+		resetForm: function resetForm() {
+			this.product = {
+				is_variable: 0,
+				categories: [],
+				fieldsData: [],
+				variants: [],
+				images: [],
+				uploadableImages: [],
+				prices: {},
+				translations: this.$helpers.mockTranslations({ title: 'New product', slug: '' })
+			};
 
-            this.setProductPrices(this.product);
-        },
-        fetchProductCategories: function fetchProductCategories() {
-            var _this2 = this;
+			this.setProductPrices(this.product);
+		},
+		fetchProductCategories: function fetchProductCategories() {
+			var _this2 = this;
 
-            this.loadingStates.categories = true;
+			this.loadingStates.categories = true;
 
-            return this.$http.get('/admin/products/api/categories').then(function (_ref) {
-                var categories = _ref.data;
+			return this.$http.get('/admin/products/api/categories').then(function (_ref) {
+				var categories = _ref.data;
 
-                _this2.$store.commit('setProductCategories', categories);
-                _this2.loadingStates.categories = false;
-            }).catch(this.$helpers.showServerError);
-        },
-        fetchProduct: function fetchProduct() {
-            var _this3 = this;
+				_this2.$store.commit('setProductCategories', categories);
+				_this2.loadingStates.categories = false;
+			}).catch(this.$helpers.showServerError);
+		},
+		fetchProduct: function fetchProduct() {
+			var _this3 = this;
 
-            this.loadingStates.product = true;
-            var id = this.$route.params.id;
+			this.loadingStates.product = true;
+			var id = this.$route.params.id;
 
-            return this.$http.get('/admin/products/api/products/' + id).then(function (_ref2) {
-                var product = _ref2.data;
+			return this.$http.get('/admin/products/api/products/' + id).then(function (_ref2) {
+				var product = _ref2.data;
 
-                _this3.product = product;
-            }).then(this.fetchFields).then(function () {
-                _this3.loadingStates.product = false;
-                _this3.initialCompleted = true;
-            }).catch(this.$helpers.showServerError).then();
-        },
-        fetchFields: function fetchFields() {
-            var _this4 = this;
+				_this3.product = product;
+			}).then(this.fetchFields).then(function () {
+				_this3.loadingStates.product = false;
+				_this3.initialCompleted = true;
+			}).catch(this.$helpers.showServerError).then();
+		},
+		fetchFields: function fetchFields() {
+			var _this4 = this;
 
-            var payload = {
-                params: {
-                    categories: this.product.categories
-                }
-            };
+			var payload = {
+				params: {
+					categories: this.product.categories
+				}
+			};
 
-            this.loadingStates.fields = true;
+			this.loadingStates.fields = true;
 
-            return this.$http.get('/admin/products/api/products/fields', payload).then(function (_ref3) {
-                var fields = _ref3.data;
+			return this.$http.get('/admin/products/api/products/fields', payload).then(function (_ref3) {
+				var fields = _ref3.data;
 
-                _this4.productFields = fields;
-                _this4.mockProductFields();
-                _this4.loadingStates.fields = false;
-            }).catch(this.$helpers.showServerError);
-        },
-        mockProductFields: function mockProductFields() {
-            var _this5 = this;
+				_this4.productFields = fields;
+				_this4.mockProductFields();
+				_this4.loadingStates.fields = false;
+			}).catch(this.$helpers.showServerError);
+		},
+		mockProductFields: function mockProductFields() {
+			var _this5 = this;
 
-            __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each(this.productFields, function (field) {
-                var productField = __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.find(_this5.product.fieldsData, { id: field.id });
+			__WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each(this.productFields, function (field) {
+				var productField = __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.find(_this5.product.fieldsData, { id: field.id });
 
-                if (productField) {
-                    // Bind reference.
-                    field.model = productField;
-                    return;
-                }
+				if (productField) {
+					// Bind reference.
+					field.model = productField;
+					return;
+				}
 
-                var fieldObject = {
-                    id: field.id
-                };
+				var fieldObject = {
+					id: field.id
+				};
 
-                if (field.is_translatable) {
-                    fieldObject.values = {};
+				if (field.is_translatable) {
+					fieldObject.values = {};
 
-                    __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each(_this5.languages, function (language) {
-                        fieldObject.values[language.iso_code] = '';
-                    });
-                } else {
-                    fieldObject.value = '';
-                }
+					__WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each(_this5.languages, function (language) {
+						fieldObject.values[language.iso_code] = '';
+					});
+				} else {
+					fieldObject.value = '';
+				}
 
-                _this5.product.fieldsData.push(fieldObject);
+				_this5.product.fieldsData.push(fieldObject);
 
-                field.model = fieldObject;
-            });
-        },
-        addProductVariant: function addProductVariant() {
-            var product = {
-                key: this.$helpers.randomString(10),
-                parameters: [],
-                prices: {},
-                images: [],
-                uploadableImages: [],
-                translations: this.$helpers.mockTranslations({ title: 'New variant', slug: '' })
-            };
+				field.model = fieldObject;
+			});
+		},
+		addProductVariant: function addProductVariant() {
+			var product = {
+				key: this.$helpers.randomString(10),
+				parameters: [],
+				prices: {},
+				images: [],
+				uploadableImages: [],
+				translations: this.$helpers.mockTranslations({ title: 'New variant', slug: '' })
+			};
 
-            this.setProductPrices(product);
-            this.product.variants.push(product);
-        },
-        getVariantTitle: function getVariantTitle(variant) {
-            return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.get(variant, 'translations.' + this.currentLanguage + '.title', 'New variant');
-        },
-        removeProductVariant: function removeProductVariant(variant) {
-            this.product.variants.splice(this.product.variants.indexOf(variant), 1);
-        },
-        setProductPrices: function setProductPrices(product) {
-            var prices = {};
+			this.setProductPrices(product);
+			this.product.variants.push(product);
+		},
+		getVariantTitle: function getVariantTitle(variant) {
+			return __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.get(variant, 'translations.' + this.currentLanguage + '.title', 'New variant');
+		},
+		removeProductVariant: function removeProductVariant(variant) {
+			this.product.variants.splice(this.product.variants.indexOf(variant), 1);
+		},
+		setProductPrices: function setProductPrices(product) {
+			var prices = {};
 
-            __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each(this.currencies, function (currency) {
-                prices[currency.id] = {
-                    id: currency.id,
-                    has_discount: false,
-                    discount_type: 'none',
-                    discount_amount: 0,
-                    with_vat_with_discount: 0,
-                    with_vat_without_discount: 0,
-                    without_vat_with_discount: 0,
-                    without_vat_without_discount: 0
-                };
-            });
+			__WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each(this.currencies, function (currency) {
+				prices[currency.id] = {
+					id: currency.id,
+					has_discount: false,
+					discount_type: 'none',
+					discount_amount: 0,
+					with_vat_with_discount: 0,
+					with_vat_without_discount: 0,
+					without_vat_with_discount: 0,
+					without_vat_without_discount: 0
+				};
+			});
 
-            product.prices = __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.cloneDeep(prices);
-        },
-        equalizeNameColumns: function equalizeNameColumns() {
-            var maxWidth = 100;
+			product.prices = __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.cloneDeep(prices);
+		},
+		equalizeNameColumns: function equalizeNameColumns() {
+			var maxWidth = 100;
 
-            __WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each($(this.$el).find('table:visible .field-name__span'), function (span) {
-                maxWidth = $(span).width() > maxWidth ? $(span).width() : maxWidth;
-            });
+			__WEBPACK_IMPORTED_MODULE_0_lodash___default.a.each($(this.$el).find('table:visible .field-name__span'), function (span) {
+				maxWidth = $(span).width() > maxWidth ? $(span).width() : maxWidth;
+			});
 
-            $(this.$el).find('table:visible .field-name__column').width(Math.round(maxWidth) + 30);
+			$(this.$el).find('table:visible .field-name__column').width(Math.round(maxWidth) + 30);
 
-            setTimeout(this.equalizeNameColumns, 500);
-        },
-        saveProduct: function saveProduct() {
-            var _this6 = this;
+			setTimeout(this.equalizeNameColumns, 500);
+		},
+		saveProduct: function saveProduct() {
+			var _this6 = this;
 
-            this.loadingStates.product = true;
+			this.loadingStates.product = true;
 
-            var route = this.isEdit ? '/admin/products/api/products/' + this.$route.params.id : '/admin/products/api/products';
-            var payload = this.$helpers.getFormDataFromObject(this.product);
+			var route = this.isEdit ? '/admin/products/api/products/' + this.$route.params.id : '/admin/products/api/products';
+			var payload = this.$helpers.getFormDataFromObject(this.product);
 
-            this.$http.post(route, payload).then(function (_ref4) {
-                var data = _ref4.data;
+			this.$http.post(route, payload).then(function (_ref4) {
+				var data = _ref4.data;
 
-                if (data.success) {
-                    $.growl.success({
-                        message: data.success
-                    });
-                }
+				if (data.success) {
+					$.growl.success({
+						message: data.success
+					});
+				}
 
-                if (data.redirect) {
-                    _this6.$router.push(data.redirect);
-                }
+				if (data.redirect) {
+					_this6.$router.push(data.redirect);
+				}
 
-                if (data.product) {
-                    _this6.product = product;
-                }
-            }).catch(this.$helpers.showServerError).then(function () {
-                return _this6.loadingStates.product = false;
-            });
-        }
-    },
+				if (data.product) {
+					_this6.product = product;
+				}
+			}).catch(this.$helpers.showServerError).then(function () {
+				return _this6.loadingStates.product = false;
+			});
+		}
+	},
 
-    components: {
-        select2: window.Select2,
-        ProductField: __WEBPACK_IMPORTED_MODULE_2__partials_ProductField___default.a,
-        ProductVariant: __WEBPACK_IMPORTED_MODULE_3__partials_ProductVariant___default.a
-    },
+	components: {
+		select2: window.Select2,
+		ProductField: __WEBPACK_IMPORTED_MODULE_2__partials_ProductField___default.a,
+		ProductVariant: __WEBPACK_IMPORTED_MODULE_3__partials_ProductVariant___default.a
+	},
 
-    watch: {
-        'product.categories': function productCategories(newCategories, oldCategories) {
-            if (!this.initialCompleted) {
-                return;
-            }
+	watch: {
+		'product.categories': function productCategories(newCategories, oldCategories) {
+			if (!this.initialCompleted) {
+				return;
+			}
 
-            if (__WEBPACK_IMPORTED_MODULE_0_lodash___default.a.isEqual(newCategories, oldCategories)) {
-                return;
-            }
+			if (__WEBPACK_IMPORTED_MODULE_0_lodash___default.a.isEqual(newCategories, oldCategories)) {
+				return;
+			}
 
-            this.fetchFields();
-        },
-        $route: function $route() {
-            this.init();
-        }
-    }
+			this.fetchFields();
+		},
+		$route: function $route() {
+			this.init();
+		}
+	}
 });
 
 /***/ }),
@@ -29050,292 +29124,364 @@ var render = function() {
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
   return _c(
-    "div",
-    {
-      staticClass: "panel panel-default",
-      class: { "form-loading": _vm.isLoading }
-    },
+    "section",
+    { attrs: { id: "product-form" } },
     [
-      _c("div", { staticClass: "panel-heading" }, [
-        _c("span", { staticClass: "panel-title" }, [
-          _vm._v(_vm._s(_vm.isEdit ? "Edit" : "Create") + " product")
+      _c("breadcrumb", { attrs: { breadcrumb: _vm.breadcrumb } }),
+      _vm._v(" "),
+      _c("div", { staticClass: "page-header" }, [
+        _c("div", { staticClass: "row" }, [
+          _vm._m(0),
+          _vm._v(" "),
+          _c("hr", { staticClass: "page-wide-block visible-xs visible-sm" }),
+          _vm._v(" "),
+          _c(
+            "div",
+            {
+              staticClass:
+                "col-xs-12 width-md-auto width-lg-auto width-xl-auto pull-md-right"
+            },
+            [
+              _c(
+                "router-link",
+                {
+                  staticClass: "btn btn-danger btn-block",
+                  attrs: { to: { name: "products.index" } }
+                },
+                [
+                  _c("span", {
+                    staticClass: "btn-label-icon left fa fa-times"
+                  }),
+                  _vm._v(" Back to the list\n                ")
+                ]
+              )
+            ],
+            1
+          )
         ])
       ]),
       _vm._v(" "),
       _c(
         "div",
-        { staticClass: "panel-body" },
+        {
+          staticClass: "panel panel-default",
+          class: { "form-loading": _vm.isLoading }
+        },
         [
-          _c("div", { staticClass: "form-group" }, [
-            _c("label", { attrs: { for: "is_variable" } }, [
-              _vm._v("Product type:")
-            ]),
-            _vm._v(" "),
-            _c(
-              "select",
-              {
-                directives: [
-                  {
-                    name: "model",
-                    rawName: "v-model.number",
-                    value: _vm.product.is_variable,
-                    expression: "product.is_variable",
-                    modifiers: { number: true }
-                  }
-                ],
-                staticClass: "form-control",
-                attrs: { id: "is_variable" },
-                on: {
-                  change: function($event) {
-                    var $$selectedVal = Array.prototype.filter
-                      .call($event.target.options, function(o) {
-                        return o.selected
-                      })
-                      .map(function(o) {
-                        var val = "_value" in o ? o._value : o.value
-                        return _vm._n(val)
-                      })
-                    _vm.$set(
-                      _vm.product,
-                      "is_variable",
-                      $event.target.multiple ? $$selectedVal : $$selectedVal[0]
-                    )
-                  }
-                }
-              },
-              [
-                _c("option", { attrs: { value: "0" } }, [
-                  _vm._v("Simple product")
-                ]),
-                _vm._v(" "),
-                _c("option", { attrs: { value: "1" } }, [
-                  _vm._v("Variable product")
-                ])
-              ]
-            )
+          _c("div", { staticClass: "panel-heading" }, [
+            _c("span", { staticClass: "panel-title" }, [
+              _vm._v(_vm._s(_vm.isEdit ? "Edit" : "Create") + " product")
+            ])
           ]),
           _vm._v(" "),
           _c(
             "div",
-            { staticClass: "form-group" },
+            { staticClass: "panel-body" },
             [
-              _c("label", { staticClass: "control-label" }, [
-                _vm._v("Categories:")
+              _c("div", { staticClass: "form-group" }, [
+                _c("label", { attrs: { for: "is_variable" } }, [
+                  _vm._v("Product type:")
+                ]),
+                _vm._v(" "),
+                _c(
+                  "select",
+                  {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model.number",
+                        value: _vm.product.is_variable,
+                        expression: "product.is_variable",
+                        modifiers: { number: true }
+                      }
+                    ],
+                    staticClass: "form-control",
+                    attrs: { id: "is_variable" },
+                    on: {
+                      change: function($event) {
+                        var $$selectedVal = Array.prototype.filter
+                          .call($event.target.options, function(o) {
+                            return o.selected
+                          })
+                          .map(function(o) {
+                            var val = "_value" in o ? o._value : o.value
+                            return _vm._n(val)
+                          })
+                        _vm.$set(
+                          _vm.product,
+                          "is_variable",
+                          $event.target.multiple
+                            ? $$selectedVal
+                            : $$selectedVal[0]
+                        )
+                      }
+                    }
+                  },
+                  [
+                    _c("option", { attrs: { value: "0" } }, [
+                      _vm._v("Simple product")
+                    ]),
+                    _vm._v(" "),
+                    _c("option", { attrs: { value: "1" } }, [
+                      _vm._v("Variable product")
+                    ])
+                  ]
+                )
               ]),
               _vm._v(" "),
-              _c("select2", {
-                attrs: { multiple: true, data: _vm.productCategories },
-                model: {
-                  value: _vm.product.categories,
-                  callback: function($$v) {
-                    _vm.$set(_vm.product, "categories", $$v)
-                  },
-                  expression: "product.categories"
-                }
-              })
-            ],
-            1
-          ),
-          _vm._v(" "),
-          _c("div", { staticClass: "panel panel-default" }, [
-            _c("div", { staticClass: "panel-heading" }, [
-              _vm._m(0),
-              _vm._v(" "),
-              _vm.translatableFields.length
-                ? _c(
-                    "ul",
-                    { staticClass: "nav nav-tabs nav-xs" },
-                    _vm._l(_vm.languages, function(language) {
-                      return _c(
-                        "li",
-                        {
-                          class: {
-                            active: language.iso_code === _vm.currentLanguage
-                          }
-                        },
-                        [
-                          _c(
-                            "a",
-                            {
-                              on: {
-                                click: function($event) {
-                                  $event.preventDefault()
-                                  _vm.currentLanguage = language.iso_code
-                                }
-                              }
-                            },
-                            [_vm._v(_vm._s(language.title_localized))]
-                          )
-                        ]
-                      )
-                    })
-                  )
-                : _vm._e()
-            ]),
-            _vm._v(" "),
-            _c("div", { staticClass: "panel-body" }, [
               _c(
-                "table",
-                { staticClass: "table table-stripped" },
+                "div",
+                { staticClass: "form-group" },
                 [
-                  _vm._l(_vm.languages, function(language) {
-                    return _c(
-                      "tbody",
-                      {
-                        directives: [
-                          {
-                            name: "show",
-                            rawName: "v-show",
-                            value: _vm.currentLanguage === language.iso_code,
-                            expression: "currentLanguage === language.iso_code"
-                          }
-                        ]
-                      },
-                      _vm._l(_vm.translatableFields, function(field) {
-                        return _c("product-field", {
-                          key: field.id,
-                          attrs: { tr: true, field: field, language: language },
-                          model: {
-                            value: field.model.values[language.iso_code],
-                            callback: function($$v) {
-                              _vm.$set(
-                                field.model.values,
-                                language.iso_code,
-                                $$v
-                              )
-                            },
-                            expression: "field.model.values[language.iso_code]"
-                          }
-                        })
-                      })
-                    )
-                  }),
-                  _vm._v(" "),
-                  _c(
-                    "tbody",
-                    _vm._l(_vm.nonTranslatableFields, function(field) {
-                      return _c("product-field", {
-                        key: field.id,
-                        attrs: { tr: true, field: field },
-                        model: {
-                          value: field.model.value,
-                          callback: function($$v) {
-                            _vm.$set(field.model, "value", $$v)
-                          },
-                          expression: "field.model.value"
-                        }
-                      })
-                    })
-                  )
-                ],
-                2
-              )
-            ])
-          ]),
-          _vm._v(" "),
-          _vm.product.is_variable
-            ? _c("div", { staticClass: "panel panel-default" }, [
-                _c("div", { staticClass: "panel-heading" }, [
-                  _c("span", { staticClass: "panel-title" }, [
-                    _vm._v("Product variants")
+                  _c("label", { staticClass: "control-label" }, [
+                    _vm._v("Categories:")
                   ]),
                   _vm._v(" "),
-                  _c("div", { staticClass: "panel-heading-btn" }, [
-                    _c(
-                      "button",
-                      {
-                        staticClass: "btn btn-xs btn-success",
-                        attrs: { type: "button" },
-                        on: {
-                          click: function($event) {
-                            _vm.addProductVariant()
-                          }
-                        }
+                  _c("select2", {
+                    attrs: { multiple: true, data: _vm.productCategories },
+                    model: {
+                      value: _vm.product.categories,
+                      callback: function($$v) {
+                        _vm.$set(_vm.product, "categories", $$v)
                       },
-                      [
-                        _c("i", { staticClass: "fa fa-plus" }),
-                        _vm._v(" Add product variant\n                    ")
-                      ]
-                    )
-                  ])
+                      expression: "product.categories"
+                    }
+                  })
+                ],
+                1
+              ),
+              _vm._v(" "),
+              _c("div", { staticClass: "panel panel-default" }, [
+                _c("div", { staticClass: "panel-heading" }, [
+                  _vm._m(1),
+                  _vm._v(" "),
+                  _vm.translatableFields.length
+                    ? _c(
+                        "ul",
+                        { staticClass: "nav nav-tabs nav-xs" },
+                        _vm._l(_vm.languages, function(language) {
+                          return _c(
+                            "li",
+                            {
+                              class: {
+                                active:
+                                  language.iso_code === _vm.currentLanguage
+                              }
+                            },
+                            [
+                              _c(
+                                "a",
+                                {
+                                  on: {
+                                    click: function($event) {
+                                      $event.preventDefault()
+                                      _vm.currentLanguage = language.iso_code
+                                    }
+                                  }
+                                },
+                                [_vm._v(_vm._s(language.title_localized))]
+                              )
+                            ]
+                          )
+                        })
+                      )
+                    : _vm._e()
                 ]),
                 _vm._v(" "),
                 _c("div", { staticClass: "panel-body" }, [
                   _c(
-                    "ul",
-                    { staticClass: "nav nav-tabs" },
-                    _vm._l(_vm.product.variants, function(variant) {
-                      return _c("li", [
-                        _c(
-                          "a",
+                    "table",
+                    { staticClass: "table table-stripped" },
+                    [
+                      _vm._l(_vm.languages, function(language) {
+                        return _c(
+                          "tbody",
                           {
-                            attrs: {
-                              href: "#variant-" + variant.key,
-                              "data-toggle": "tab"
-                            }
-                          },
-                          [_vm._v(_vm._s(_vm.getVariantTitle(variant)))]
-                        )
-                      ])
-                    })
-                  ),
-                  _vm._v(" "),
-                  _c(
-                    "div",
-                    { staticClass: "tab-content tab-content-bordered" },
-                    _vm._l(_vm.product.variants, function(variant) {
-                      return _c(
-                        "div",
-                        {
-                          key: variant.key,
-                          staticClass: "tab-pane fade",
-                          attrs: { id: "variant-" + variant.key }
-                        },
-                        [
-                          _c("product-variant", {
-                            attrs: { product: variant },
-                            on: {
-                              remove: function($event) {
-                                _vm.removeProductVariant(variant)
+                            directives: [
+                              {
+                                name: "show",
+                                rawName: "v-show",
+                                value:
+                                  _vm.currentLanguage === language.iso_code,
+                                expression:
+                                  "currentLanguage === language.iso_code"
                               }
+                            ]
+                          },
+                          _vm._l(_vm.translatableFields, function(field) {
+                            return _c("product-field", {
+                              key: field.id,
+                              attrs: {
+                                tr: true,
+                                field: field,
+                                language: language
+                              },
+                              model: {
+                                value: field.model.values[language.iso_code],
+                                callback: function($$v) {
+                                  _vm.$set(
+                                    field.model.values,
+                                    language.iso_code,
+                                    $$v
+                                  )
+                                },
+                                expression:
+                                  "field.model.values[language.iso_code]"
+                              }
+                            })
+                          })
+                        )
+                      }),
+                      _vm._v(" "),
+                      _c(
+                        "tbody",
+                        _vm._l(_vm.nonTranslatableFields, function(field) {
+                          return _c("product-field", {
+                            key: field.id,
+                            attrs: { tr: true, field: field },
+                            model: {
+                              value: field.model.value,
+                              callback: function($$v) {
+                                _vm.$set(field.model, "value", $$v)
+                              },
+                              expression: "field.model.value"
                             }
                           })
-                        ],
-                        1
+                        })
                       )
-                    })
+                    ],
+                    2
                   )
                 ])
-              ])
-            : _vm._e(),
+              ]),
+              _vm._v(" "),
+              _vm.product.is_variable
+                ? _c("div", { staticClass: "panel panel-default" }, [
+                    _c("div", { staticClass: "panel-heading" }, [
+                      _c("span", { staticClass: "panel-title" }, [
+                        _vm._v("Product variants")
+                      ]),
+                      _vm._v(" "),
+                      _c("div", { staticClass: "panel-heading-btn" }, [
+                        _c(
+                          "button",
+                          {
+                            staticClass: "btn btn-xs btn-success",
+                            attrs: { type: "button" },
+                            on: {
+                              click: function($event) {
+                                _vm.addProductVariant()
+                              }
+                            }
+                          },
+                          [
+                            _c("i", { staticClass: "fa fa-plus" }),
+                            _vm._v(
+                              " Add product variant\n                        "
+                            )
+                          ]
+                        )
+                      ])
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "panel-body" }, [
+                      _c(
+                        "ul",
+                        { staticClass: "nav nav-tabs" },
+                        _vm._l(_vm.product.variants, function(variant) {
+                          return _c("li", [
+                            _c(
+                              "a",
+                              {
+                                attrs: {
+                                  href: "#variant-" + variant.key,
+                                  "data-toggle": "tab"
+                                }
+                              },
+                              [_vm._v(_vm._s(_vm.getVariantTitle(variant)))]
+                            )
+                          ])
+                        })
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "div",
+                        { staticClass: "tab-content tab-content-bordered" },
+                        _vm._l(_vm.product.variants, function(variant) {
+                          return _c(
+                            "div",
+                            {
+                              key: variant.key,
+                              staticClass: "tab-pane fade",
+                              attrs: { id: "variant-" + variant.key }
+                            },
+                            [
+                              _c("product-variant", {
+                                attrs: { product: variant },
+                                on: {
+                                  remove: function($event) {
+                                    _vm.removeProductVariant(variant)
+                                  }
+                                }
+                              })
+                            ],
+                            1
+                          )
+                        })
+                      )
+                    ])
+                  ])
+                : _vm._e(),
+              _vm._v(" "),
+              !_vm.product.is_variable
+                ? _c("product-variant", { attrs: { product: _vm.product } })
+                : _vm._e()
+            ],
+            1
+          ),
           _vm._v(" "),
-          !_vm.product.is_variable
-            ? _c("product-variant", { attrs: { product: _vm.product } })
-            : _vm._e()
-        ],
-        1
-      ),
-      _vm._v(" "),
-      _c("div", { staticClass: "panel-footer text-right" }, [
-        _c(
-          "button",
-          {
-            staticClass: "btn btn-success",
-            attrs: { type: "button" },
-            on: { click: _vm.saveProduct }
-          },
-          [
-            _c("i", { staticClass: "fa fa-check" }),
-            _vm._v(
-              " " + _vm._s(_vm.isEdit ? "Update" : "Create") + "\n        "
+          _c("div", { staticClass: "panel-footer text-right" }, [
+            _c(
+              "button",
+              {
+                staticClass: "btn btn-success",
+                attrs: { type: "button" },
+                on: { click: _vm.saveProduct }
+              },
+              [
+                _c("i", { staticClass: "fa fa-check" }),
+                _vm._v(
+                  " " +
+                    _vm._s(_vm.isEdit ? "Update" : "Create") +
+                    "\n            "
+                )
+              ]
             )
-          ]
-        )
-      ])
-    ]
+          ])
+        ]
+      )
+    ],
+    1
   )
 }
 var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c(
+      "div",
+      { staticClass: "col-md-4 text-xs-center text-md-left text-nowrap" },
+      [
+        _c("h1", [
+          _c("span", { staticClass: "text-muted font-weight-light" }, [
+            _c("i", { staticClass: "page-header-icon fa fa-shopping-cart" }),
+            _vm._v(" Products\n                    ")
+          ])
+        ])
+      ]
+    )
+  },
   function() {
     var _vm = this
     var _h = _vm.$createElement
