@@ -154,6 +154,7 @@
 
 			breadcrumb () {
 				let breadcrumb = {
+					'products.index': 'Products',
 					'parameters.index': 'Parameters'
 				};
 

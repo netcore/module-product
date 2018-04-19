@@ -1,5 +1,5 @@
 <template>
-    <section id="parameters-index" :class="{'panel-loading': isLoading}">
+    <section id="fields-index" :class="{'panel-loading': isLoading}">
         <breadcrumb :breadcrumb="breadcrumb"></breadcrumb>
 
         <div class="page-header">
@@ -7,7 +7,7 @@
                 <div class="col-md-4 text-xs-center text-md-left text-nowrap">
                     <h1>
                         <span class="text-muted font-weight-light">
-                            <i class="page-header-icon fa fa-check"></i> Product parameters
+                            <i class="page-header-icon fa fa-pencil"></i> Product fields
                         </span>
                     </h1>
                 </div>
@@ -15,19 +15,22 @@
                 <hr class="page-wide-block visible-xs visible-sm">
 
                 <div class="col-xs-12 width-md-auto width-lg-auto width-xl-auto pull-md-right">
-                    <router-link :to="{name: 'parameters.create'}" class="btn btn-primary btn-block">
-                        <span class="btn-label-icon left fa fa-plus-circle"></span> Create parameter
+                    <router-link :to="{name: 'fields.create'}" class="btn btn-primary btn-block">
+                        <span class="btn-label-icon left fa fa-plus-circle"></span> Create field
                     </router-link>
                 </div>
             </div>
         </div>
 
         <div class="table-primary">
-            <table class="table table-bordered" id="parameters-datatable" style="width: 100%">
+            <table class="table table-bordered" id="products-datatable" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Name</th>
+                        <th>Is translatable</th>
+                        <th>Is global</th>
                         <th>Type</th>
+                        <th>Categories</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -42,15 +45,15 @@
 			breadcrumb () {
 				return {
 					'products.index': 'Products',
-					'parameters.index': 'Parameters'
+					'fields.index': 'Product fields'
 				};
 			}
 		},
 
-		data() {
+		data () {
 			return {
 				isLoading: true,
-                datatable: null
+				datatable: null
 			};
 		},
 
@@ -60,10 +63,10 @@
 
 		methods: {
 			initDatatable () {
-				this.datatable = $('#parameters-datatable').dataTable({
+				this.datatable = $('#products-datatable').dataTable({
 					processing: true,
 					serverSide: true,
-					ajax: '/admin/products/api/parameters',
+					ajax: '/admin/products/api/fields',
 					responsive: true,
 					columns: [
 						{
@@ -73,10 +76,33 @@
 							searchable: true
 						},
 						{
+							data: 'is_translatable',
+							name: 'is_translatable',
+							orderable: true,
+							searchable: true,
+							className: 'text-center',
+							width: 150
+						},
+						{
+							data: 'is_global',
+							name: 'is_global',
+							orderable: true,
+							searchable: true,
+							className: 'text-center',
+							width: 130
+						},
+						{
 							data: 'type',
 							name: 'type',
 							orderable: true,
-							searchable: true
+							searchable: true,
+							className: 'text-center'
+						},
+						{
+							data: 'categories',
+							name: 'categories',
+							orderable: false,
+							searchable: false
 						},
 						{
 							data: 'actions',
@@ -97,12 +123,12 @@
 				});
 			},
 
-			deleteParameter (id) {
-				let route = `/admin/products/api/parameters/${id}`;
+			deleteField (id) {
+				let route = `/admin/products/api/fields/${id}`;
 
 				swal({
 					title: 'Are you sure?',
-					text: 'Parameter with it\'s attributes will be deleted!',
+					text: 'Product field will be deleted!',
 					type: 'warning',
 					showCancelButton: true,
 					confirmButtonText: 'Yes',
@@ -110,16 +136,11 @@
 				}).then(() => {
 					this.isLoading = true;
 
-					this.$http.delete(route).then(({data}) => {
+					return this.$http.delete(route).then(({data}) => {
 						this.datatable.fnDraw();
-
-						$.growl.success({
-							message: data.message
-						});
-					}).catch(err => {
-						console.log(err);
-                    });
-				}).catch(() => {}).then(() => {
+						$.growl.success({message: data.message});
+					});
+				}).catch(this.$helpers.showServerError).then(() => {
 					this.isLoading = false;
 				});
 			}

@@ -23,6 +23,8 @@ Route::group([
         Route::delete('parameters/{parameter}', 'ParameterController@destroy');
 
         // Fields.
+        Route::get('fields/get-types', 'BaseController@productFieldTypes');
+
         Route::get('fields', 'FieldController@paginate');
         Route::post('fields', 'FieldController@store');
         Route::get('fields/{field}', 'FieldController@show');

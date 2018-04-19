@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Category\Models\CategoryGroup;
+use Modules\Product\Models\Field;
 use Modules\Product\Repositories\FieldsRepository;
 
 class BaseController extends Controller
@@ -75,5 +76,17 @@ class BaseController extends Controller
         });
 
         return response()->json($categories);
+    }
+
+    /**
+     * Get product field types.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function productFieldTypes(): JsonResponse
+    {
+        return response()->json(
+            Field::TYPES
+        );
     }
 }

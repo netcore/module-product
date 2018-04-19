@@ -6,7 +6,6 @@ use Exception;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use Illuminate\View\View;
 
 use Modules\Product\Http\Requests\FieldRequest;
 use Modules\Product\Models\Field;
@@ -17,23 +16,16 @@ class FieldController extends Controller
     use FieldsPagination;
 
     /**
-     * Display listing of product fields.
+     * Get product field data.
      *
-     * @return \Illuminate\View\View
+     * @param \Modules\Product\Models\Field $field
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function index(): View
+    public function show(Field $field): JsonResponse
     {
-        return view('product::fields.index', compact('fields'));
-    }
-
-    /**
-     * Display product field create form.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function create(): View
-    {
-        return view('product::fields.form');
+        return response()->json(
+            $field->formattedForFrontend()
+        );
     }
 
     /**
@@ -64,19 +56,13 @@ class FieldController extends Controller
 
         return response()->json([
             'success'  => 'Field created successfully!',
-            'redirect' => route('product::fields.edit', $field),
+            'redirect' => [
+                'name'   => 'fields.edit',
+                'params' => [
+                    'id' => $field->id,
+                ],
+            ],
         ]);
-    }
-
-    /**
-     * Display product field edit form.
-     *
-     * @param \Modules\Product\Models\Field $field
-     * @return \Illuminate\View\View
-     */
-    public function edit(Field $field): View
-    {
-        return view('product::fields.form', compact('field'));
     }
 
     /**
@@ -124,7 +110,6 @@ class FieldController extends Controller
 
         return response()->json([
             'success' => 'Product field successfully updated!',
-            'field'   => $field->refresh()->formattedForFrontend(),
         ]);
     }
 
@@ -139,9 +124,7 @@ class FieldController extends Controller
         try {
             $field->delete();
         } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500);
+            abort(500, $e->getMessage());
         }
 
         return response()->json([

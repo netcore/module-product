@@ -1,7 +1,7 @@
-<a href="{{ route('product::fields.edit', $productField) }}" class="btn btn-xs btn-primary" data-vue-method="editField">
+<a href="/admin/products/#/fields/{{ $productField->id }}/edit" class="btn btn-xs btn-success">
     <i class="fa fa-edit"></i> Edit
 </a>
 
-<a href="javascript:;" class="btn btn-xs btn-danger delete-field" data-route="{{ route('product::fields.destroy', $productField) }}">
+<button type="button" class="btn btn-danger btn-xs vue-proxy" data-method="deleteField" data-params="{{ json_encode([$productField->id]) }}">
     <i class="fa fa-trash"></i> Delete
-</a>
+</button>

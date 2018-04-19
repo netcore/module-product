@@ -7,6 +7,9 @@ import ProductsForm from './components/Product/Form';
 import ParametersIndex from './components/Parameter/Index';
 import ParametersForm from './components/Parameter/Form';
 
+import FieldsIndex from './components/Field/Index';
+import FieldsForm from './components/Field/Form';
+
 Vue.use(VueRouter);
 
 // Router.
@@ -44,22 +47,35 @@ const router = new VueRouter({
 			path: '/parameters/:id/edit',
 			name: 'parameters.edit',
 			component: ParametersForm
-		}
+		},
+
+		// Fields.
+		{
+			path: '/fields',
+			name: 'fields.index',
+			component: FieldsIndex
+		},
+		{
+			path: '/fields/create',
+			name: 'fields.create',
+			component: FieldsForm,
+			beforeEnter(to, from, next) {
+				store.dispatch('getDataForFieldsForm').then(next).catch(router.app.$helpers.showServerError);
+			}
+		},
+		{
+			path: '/fields/:id/edit',
+			name: 'fields.edit',
+			component: FieldsForm,
+			beforeEnter(to, from, next) {
+				store.dispatch('getDataForFieldsForm').then(next).catch(router.app.$helpers.showServerError);
+			}
+		},
 	]
 });
 
 router.beforeEach((to, from, next) => {
-	const $http = router.app.$http;
-
-	if (!store.state.languages.length) {
-		$http.get('/admin/products/api/languages').then(({data: languages}) => {
-			store.commit('setLanguages', languages);
-		}).then(() => $http.get('/admin/products/api/currencies')).then(({data: currencies}) => {
-			store.commit('setCurrencies', currencies);
-		}).then(next);
-	} else {
-		next();
-	}
+	store.dispatch('initialize').then(next).catch(router.app.$helpers.showServerError);
 });
 
 export default router;
